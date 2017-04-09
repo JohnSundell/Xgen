@@ -47,7 +47,7 @@ class XgenTests: XCTestCase {
 
         // Generate workspace
         let workspace = Workspace(path: folder.path + "Workspace.xcworkspace")
-        workspace.addProject(at: folder.path + "Project/Project.xcodeproj")
+        workspace.addProject(at: folder.path + "Project/Project.xcodeproj/")
         try workspace.generate()
 
         // Build using xcodebuild

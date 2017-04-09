@@ -38,6 +38,8 @@ public class Workspace: Generatable {
 
     /// Add an Xcode project reference to this workspace
     public func addProject(at path: String) {
+        let path = path.removingSuffixIfNeeded("/")
+
         assert(path.hasSuffix(".xcodeproj"),
                "The path '\(path)' does not point to an Xcode project")
 
