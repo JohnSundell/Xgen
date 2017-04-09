@@ -20,8 +20,8 @@ public class Playground: Generatable {
     public let path: String
     /// The platform to generate a playground for
     public var platform: Platform
-    /// The code that the playground should contain
-    public var code: String
+    /// The code that the playground should contain (if nil, a default will be used)
+    public var code: String?
 
     // MARK: - Initializer
 
@@ -42,7 +42,7 @@ public class Playground: Generatable {
                         .appending("/")
 
         self.platform = platform
-        self.code = code ?? .makeDefaultCode(for: platform)
+        self.code = code
     }
 
     // MARK: - Generatable
@@ -52,7 +52,7 @@ public class Playground: Generatable {
             let folder = try FileSystem().createFolderIfNeeded(at: path)
 
             let codeFile = try folder.createFile(named: "Contents.swift")
-            try codeFile.write(string: code)
+            try codeFile.write(string: code ?? .makeDefaultCode(for: platform))
 
             let xmlFile = try folder.createFile(named: "contents.xcplayground")
             try xmlFile.write(string: generateXML())

@@ -77,6 +77,17 @@ class XgenTests: XCTestCase {
         XCTAssertTrue(try contentsFile.readAsString().contains(playground.platform.rawValue))
     }
 
+    func testChangingPlaygroundPlatformUpdatesDefaultCode() throws {
+        let playground = Playground(path: folder.path + "Playground")
+        XCTAssertEqual(playground.platform, .iOS)
+
+        playground.platform = .macOS
+        try playground.generate()
+
+        let codeFile = try folder.file(atPath: "Playground.playground/Contents.swift")
+        try XCTAssertTrue(codeFile.readAsString().contains("import Cocoa"))
+    }
+
     func testAddingGeneratingPlaygroundWithinWorkspace() throws {
         let workspace = Workspace(path: folder.path + "Workspace")
         workspace.addPlayground(named: "NewPlayground")
