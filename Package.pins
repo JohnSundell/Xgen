@@ -6,12 +6,6 @@
       "reason": null,
       "repositoryURL": "https://github.com/johnsundell/files.git",
       "version": "1.6.2"
-    },
-    {
-      "package": "ShellOut",
-      "reason": null,
-      "repositoryURL": "https://github.com/johnsundell/shellout.git",
-      "version": "1.0.0"
     }
   ],
   "version": 1
