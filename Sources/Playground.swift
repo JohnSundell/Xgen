@@ -19,9 +19,9 @@ public class Playground: Generatable {
     /// The path to generate a playground at
     public let path: String
     /// The platform to generate a playground for
-    public let platform: Platform
+    public var platform: Platform
     /// The code that the playground should contain
-    public let code: String
+    public var code: String
 
     // MARK: - Initializer
 
