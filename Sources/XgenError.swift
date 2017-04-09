@@ -11,3 +11,9 @@ public struct XgenError: Error {
     /// The underlying error that was the reason generation failed
     let underlyingError: Error
 }
+
+extension XgenError: CustomStringConvertible {
+    public var description: String {
+        return "Xgen failed to generate. Underlying error: \(underlyingError)"
+    }
+}
