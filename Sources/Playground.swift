@@ -11,9 +11,9 @@ import Files
 public class Playground: Generatable {
     /// Enum representing platforms that are playground compatible
     public enum Platform: String {
-        case iOS = "ios"
-        case macOS = "macos"
-        case tvOS = "tvos"
+        case iOS
+        case macOS
+        case tvOS
     }
 
     /// The path to generate a playground at
