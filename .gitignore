@@ -2,4 +2,6 @@
 /.build
 /Packages
 Package.pins
-/*.xcodeproj
+Carthage
+Cartfile.resolved
+xcuserdata/
