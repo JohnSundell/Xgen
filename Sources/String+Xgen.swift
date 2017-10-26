@@ -25,6 +25,6 @@ internal extension String {
         }
 
         let substringEndIndex = index(endIndex, offsetBy: -suffix.length)
-        return substring(to: substringEndIndex)
+        return String(self[..<substringEndIndex])
     }
 }

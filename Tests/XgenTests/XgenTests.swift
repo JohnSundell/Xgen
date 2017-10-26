@@ -30,7 +30,7 @@ class XgenTests: XCTestCase {
 
         let workspaceFolder = try folder.subfolder(named: "Workspace.xcworkspace")
         let contentsFile = try workspaceFolder.file(named: "Contents.xcworkspacedata")
-        let xml = try XMLDocument(data: contentsFile.read(), options: 0)
+        let xml = try XMLDocument(data: contentsFile.read(), options: [])
         XCTAssertGreaterThan(xml.childCount, 0)
     }
 
@@ -50,7 +50,7 @@ class XgenTests: XCTestCase {
         try workspace.generate()
 
         // Build using xcodebuild
-        let buildCommand = "xcodebuild -workspace Workspace.xcworkspace -scheme Project"
+        let buildCommand = "xcodebuild -workspace Workspace.xcworkspace -scheme Project-Package"
         let buildOutput = try folder.moveToAndPerform(command: buildCommand)
         XCTAssertTrue(buildOutput.contains("** BUILD SUCCEEDED **"))
     }
@@ -71,7 +71,7 @@ class XgenTests: XCTestCase {
         try XCTAssertEqual(codeFile.readAsString(), code)
 
         let contentsFile = try playgroundFolder.file(named: "contents.xcplayground")
-        let xml = try XMLDocument(data: contentsFile.read(), options: 0)
+        let xml = try XMLDocument(data: contentsFile.read(), options: [])
         XCTAssertGreaterThan(xml.childCount, 0)
         XCTAssertTrue(try contentsFile.readAsString().contains(playground.platform.rawValue))
     }
