@@ -8,7 +8,7 @@ let package = Package(
         .library(name: "Xgen", targets: ["Xgen"])
     ],
     dependencies: [
-        .package(url: "https://github.com/JohnSundell/Files.git", from: "1.0.0")
+        .package(url: "https://github.com/JohnSundell/Files.git", from: "2.0.0"),
     ],
     targets: [
         .target(
