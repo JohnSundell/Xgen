@@ -9,6 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/JohnSundell/Files.git", from: "2.0.0"),
+        .package(url: "https://github.com/JohnSundell/ShellOut.git", from: "2.0.0")
     ],
     targets: [
         .target(
@@ -18,7 +19,7 @@ let package = Package(
         ),
         .testTarget(
             name: "XgenTests",
-            dependencies: ["Xgen"],
+            dependencies: ["Xgen", "ShellOut"],
             path: "Tests"
         )
     ]

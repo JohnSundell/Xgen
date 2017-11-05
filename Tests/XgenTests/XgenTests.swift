@@ -8,6 +8,7 @@ import Foundation
 import XCTest
 import Xgen
 import Files
+import ShellOut
 
 // MARK: - Test case
 
