@@ -6,7 +6,7 @@
 
 import Foundation
 import XCTest
-import Xgen
+@testable import Xgen
 import Files
 import ShellOut
 
@@ -57,11 +57,11 @@ class XgenTests: XCTestCase {
     }
 
     func testGeneratingPlayground() throws {
-        let code = "import Foundation\n\nprint(\"Hello world\")"
+        let string = "import Foundation\n\nprint(\"Hello world\")"
         let playground = Playground(
             path: folder.path + "Playground",
             platform: .macOS,
-            code: code
+            source: .code(string)
         )
 
         try playground.generate()
@@ -69,7 +69,7 @@ class XgenTests: XCTestCase {
         let playgroundFolder = try folder.subfolder(named: "Playground.playground")
 
         let codeFile = try playgroundFolder.file(named: "Contents.swift")
-        try XCTAssertEqual(codeFile.readAsString(), code)
+        try XCTAssertEqual(codeFile.readAsString(), string)
 
         let contentsFile = try playgroundFolder.file(named: "contents.xcplayground")
         let xml = try XMLDocument(data: contentsFile.read(), options: [])
@@ -98,6 +98,69 @@ class XgenTests: XCTestCase {
         let contentsFile = try workspaceFolder.file(named: "Contents.xcworkspacedata")
         XCTAssertTrue(try contentsFile.readAsString().contains(playgroundFolder.path))
     }
+
+    func testGeneratingPlaygroundFromTemplate() throws {
+        let code = "import Foundation\n\nprint(\"Hello world\")"
+        let templateFolder = try folder.createTemplateFolder(withCode: code)
+        let platform = Playground.Platform.iOS
+
+        let playground = Playground(
+            path: folder.path + "Playground",
+            platform: platform,
+            source: .template(path: templateFolder.path)
+        )
+
+        try playground.generate()
+
+        let playgroundFolder = try folder.subfolder(named: "Playground.playground")
+
+        let codeFile = try playgroundFolder.file(named: "Contents.swift")
+        try XCTAssertEqual(codeFile.readAsString(), code)
+
+        let sources = try playgroundFolder.subfolder(named: "Sources").files
+        let template = try Playground.Template(path: templateFolder.path, platform: platform)
+        let templateSources = try template.mainFolder.subfolder(named: "Sources").files
+        XCTAssertEqual(sources.count, templateSources.count)
+    }
+
+    func testGeneratingPlaygroundFromTemplateWithNotAvailablePlatform() throws {
+        let code = "import Foundation\n\nprint(\"Hello world\")"
+        let templateFolder = try folder.createTemplateFolder(withCode: code)
+        let platform = Playground.Platform.tvOS
+
+        let playground = Playground(
+            path: folder.path + "Playground",
+            platform: platform,
+            source: .template(path: templateFolder.path)
+        )
+
+        XCTAssertThrowsError(try playground.generate()) { error in
+            guard let underlyingError = (error as? XgenError)?.underlyingError,
+                case let Playground.Template.Error.notAvailableForPlatform(platformString) = underlyingError else {
+                    return XCTFail()
+            }
+            XCTAssertEqual(platformString, platform.rawValue)
+        }
+    }
+
+    func testGeneratingPlaygroundFromTemplateWithInvalidType() throws {
+        let code = "import Foundation\n\nprint(\"Hello world\")"
+        let info = ["AllowedTypes": ["com.apple.dt.project"]]
+        let templateFolder = try folder.createTemplateFolder(withCode: code, info: info)
+
+        let playground = Playground(
+            path: folder.path + "Playground",
+            platform: .iOS,
+            source: .template(path: templateFolder.path)
+        )
+
+        XCTAssertThrowsError(try playground.generate()) { error in
+            guard let underlyingError = (error as? XgenError)?.underlyingError,
+                case Playground.Template.Error.invalidTemplateType = underlyingError else {
+                    return XCTFail()
+            }
+        }
+    }
 }
 
 // MARK: - Extensions
@@ -105,5 +168,28 @@ class XgenTests: XCTestCase {
 private extension Folder {
     @discardableResult func moveToAndPerform(command: String) throws -> String {
         return try shellOut(to: "cd \(path) && \(command)")
+    }
+
+    func createTemplateFolder(withCode code: String, info: [String: Any] = [:]) throws -> Folder {
+        let folder = try createSubfolder(named: "Template.xctemplate")
+        let templateFileName = "Playground.playground"
+        let baseInfo: [String: Any] = [
+            "AllowedTypes": ["com.apple.dt.playground"],
+            "Platforms": ["com.apple.platform.iphoneos"],
+            "MainTemplateFile": templateFileName,
+            "Summary": "A Playground"
+        ]
+        let mergedInfo = info.merging(baseInfo) { (old, _) in old }
+        let data = try PropertyListSerialization.data(fromPropertyList: mergedInfo, format: .xml, options: 0)
+        try folder.createFile(named: "TemplateInfo.plist", contents: data)
+
+        let playgroundFolder = try folder.createSubfolder(named: templateFileName)
+        try playgroundFolder.createFile(named: "Contents.swift", contents: code)
+
+        let templateSourcesFolder = try playgroundFolder.createSubfolder(named: "Sources")
+        try templateSourcesFolder.createFile(named: "One.swift")
+        try templateSourcesFolder.createFile(named: "Two.swift")
+
+        return folder
     }
 }
