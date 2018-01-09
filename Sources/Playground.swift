@@ -36,19 +36,23 @@ public class Playground: Generatable {
      *
      *  - parameter path: The path to generate a playground at
      *  - parameter platform: The platform to generate a playground for
-     *  - parameter code: The source that the playground should contain. If `nil`
-     *                    the playground will contain a system framework import
+     *  - parameter source: The source that the playground should contain. If `nil`
+     *                      the playground will contain a system framework import
      *
      *  Note that you have to call `generate()` on the playground to actually
      *  generate it on the file system.
      */
-    public init(path: String, platform: Platform = .iOS, source: Source? = nil) {
+    public init(path: String, platform: Platform, source: Source?) {
         self.path = path.removingSuffixIfNeeded("/")
             .addingSuffixIfNeeded(".playground")
             .appending("/")
 
         self.platform = platform
         self.source = source
+    }
+    
+    public convenience init(path: String, platform: Platform = .iOS, code: String? = nil) {
+        self.init(path: path, platform: platform, source: code.map(Source.code))
     }
 
     // MARK: - Generatable
@@ -95,12 +99,12 @@ public class Playground: Generatable {
     }
 }
 
-public extension Playground {
-    public final class Template {
-        public let info: Info
-        public let folder: Folder
+internal extension Playground {
+    final class Template {
+        let info: Info
+        let folder: Folder
 
-        public init(path: String, platform: Playground.Platform) throws {
+        init(path: String, platform: Playground.Platform) throws {
             let folderPath = path.removingSuffixIfNeeded("/")
                 .addingSuffixIfNeeded(".xctemplate")
                 .appending("/")
@@ -119,11 +123,11 @@ public extension Playground {
             }
         }
 
-        public var mainFolder: Folder {
+        var mainFolder: Folder {
             return try! folder.subfolder(named: info.mainFilename)
         }
 
-        public func copyContents(to targetFolder: Folder) throws {
+        func copyContents(to targetFolder: Folder) throws {
             try mainFolder.file(named: "Contents.swift").copy(to: targetFolder)
 
             if let sourcesFolder = try? mainFolder.subfolder(named: "Sources") {
@@ -133,11 +137,11 @@ public extension Playground {
     }
 }
 
-public extension Playground.Template {
-    public struct Info: Decodable {
-        public let mainFilename: String
-        public let platforms: [String]
-        public let allowedTypes: [String]
+internal extension Playground.Template {
+    struct Info: Decodable {
+        let mainFilename: String
+        let platforms: [String]
+        let allowedTypes: [String]
 
         private enum CodingKeys: String, CodingKey {
             case mainFilename = "MainTemplateFile"
@@ -146,7 +150,7 @@ public extension Playground.Template {
         }
     }
 
-    public enum Error: Swift.Error {
+    enum Error: Swift.Error {
         case notAvailableForPlatform(String)
         case invalidTemplateType
     }
