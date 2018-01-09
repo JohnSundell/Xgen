@@ -16,12 +16,20 @@ public class Playground: Generatable {
         case tvOS = "tvos"
     }
 
+    /// Enum representing the source of the playground content
+    public enum Source {
+        /// The code that the playground should contain
+        case code(String)
+        /// The path to a Xcode playground template (.xctemplate) that should be used for the playground
+        case template(path: String)
+    }
+
     /// The path to generate a playground at
     public let path: String
     /// The platform to generate a playground for
     public var platform: Platform
-    /// The code that the playground should contain (if nil, a default will be used)
-    public var code: String?
+    /// The source that the playground should contain (if nil, a default will be used)
+    public var source: Source?
 
     // MARK: - Initializer
 
@@ -30,19 +38,23 @@ public class Playground: Generatable {
      *
      *  - parameter path: The path to generate a playground at
      *  - parameter platform: The platform to generate a playground for
-     *  - parameter code: The code that the playground should contain. If `nil`
-     *                    the playground will contain a system framework import
+     *  - parameter source: The source that the playground should contain. If `nil`
+     *                      the playground will contain a system framework import
      *
      *  Note that you have to call `generate()` on the playground to actually
      *  generate it on the file system.
      */
-    public init(path: String, platform: Platform = .iOS, code: String? = nil) {
+    public init(path: String, platform: Platform, source: Source?) {
         self.path = path.removingSuffixIfNeeded("/")
-                        .addingSuffixIfNeeded(".playground")
-                        .appending("/")
+            .addingSuffixIfNeeded(".playground")
+            .appending("/")
 
         self.platform = platform
-        self.code = code
+        self.source = source
+    }
+    
+    public convenience init(path: String, platform: Platform = .iOS, code: String? = nil) {
+        self.init(path: path, platform: platform, source: code.map(Source.code))
     }
 
     // MARK: - Generatable
@@ -51,8 +63,7 @@ public class Playground: Generatable {
         do {
             let folder = try FileSystem().createFolderIfNeeded(at: path)
 
-            let codeFile = try folder.createFile(named: "Contents.swift")
-            try codeFile.write(string: code ?? .makeDefaultCode(for: platform))
+            try generateSourceCode(in: folder)
 
             let xmlFile = try folder.createFile(named: "contents.xcplayground")
             try xmlFile.write(string: generateXML())
@@ -74,6 +85,77 @@ public class Playground: Generatable {
         xml.append("</playground>")
         return xml
     }
+
+    private func generateSourceCode(in folder: Folder) throws {
+        switch source {
+        case let .code(string)?:
+            let codeFile = try folder.createFile(named: "Contents.swift")
+            try codeFile.write(string: string)
+        case let .template(path)?:
+            let template = try Template(path: path, platform: platform)
+            try template.copyContents(to: folder)
+        default:
+            let codeFile = try folder.createFile(named: "Contents.swift")
+            try codeFile.write(string: .makeDefaultCode(for: platform))
+        }
+    }
+}
+
+internal extension Playground {
+    final class Template {
+        let info: Info
+        let folder: Folder
+
+        init(path: String, platform: Playground.Platform) throws {
+            let folderPath = path.removingSuffixIfNeeded("/")
+                .addingSuffixIfNeeded(".xctemplate")
+                .appending("/")
+            self.folder = try Folder(path: folderPath)
+
+            let data = try self.folder.file(named: "TemplateInfo.plist").read()
+            let decoder = PropertyListDecoder()
+            self.info = try decoder.decode(Info.self, from: data)
+
+            guard self.info.platforms.contains(platform.templateIdentifier) else {
+                throw Error.notAvailableForPlatform(platform.rawValue)
+            }
+
+            guard self.info.allowedTypes.contains("com.apple.dt.playground") else {
+                throw Error.invalidTemplateType
+            }
+        }
+
+        var mainFolder: Folder {
+            return try! folder.subfolder(named: info.mainFilename)
+        }
+
+        func copyContents(to targetFolder: Folder) throws {
+            try mainFolder.file(named: "Contents.swift").copy(to: targetFolder)
+
+            if let sourcesFolder = try? mainFolder.subfolder(named: "Sources") {
+                try sourcesFolder.copy(to: targetFolder)
+            }
+        }
+    }
+}
+
+internal extension Playground.Template {
+    struct Info: Decodable {
+        let mainFilename: String
+        let platforms: [String]
+        let allowedTypes: [String]
+
+        private enum CodingKeys: String, CodingKey {
+            case mainFilename = "MainTemplateFile"
+            case platforms = "Platforms"
+            case allowedTypes = "AllowedTypes"
+        }
+    }
+
+    enum Error: Swift.Error {
+        case notAvailableForPlatform(String)
+        case invalidTemplateType
+    }
 }
 
 // MARK: - Private extensions
@@ -85,6 +167,17 @@ private extension Playground.Platform {
             return "UIKit"
         case .macOS:
             return "Cocoa"
+        }
+    }
+
+    var templateIdentifier: String {
+        switch self {
+        case .iOS:
+            return "com.apple.platform.iphoneos"
+        case .macOS:
+            return "com.apple.platform.macosx"
+        case .tvOS:
+            return "com.apple.platform.appletvos"
         }
     }
 }
