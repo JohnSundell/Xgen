@@ -18,7 +18,9 @@ public class Playground: Generatable {
 
     /// Enum representing the source of the playground content
     public enum Source {
+        /// The code that the playground should contain
         case code(String)
+        /// The path to a Xcode playground template (.xctemplate) that should be used for the playground
         case template(path: String)
     }
 
