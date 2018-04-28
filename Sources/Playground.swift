@@ -20,6 +20,8 @@ public class Playground: Generatable {
     public let path: String
     /// The platform to generate a playground for
     public var platform: Platform
+    /// Whether the playground should be automatically run on each code change
+    public var autoRun: Bool
     /// The code that the playground should contain (if nil, a default will be used)
     public var code: String?
 
@@ -30,18 +32,20 @@ public class Playground: Generatable {
      *
      *  - parameter path: The path to generate a playground at
      *  - parameter platform: The platform to generate a playground for
+     *  - parameter autoRun: Whether the playground should be run automatically
      *  - parameter code: The code that the playground should contain. If `nil`
      *                    the playground will contain a system framework import
      *
      *  Note that you have to call `generate()` on the playground to actually
      *  generate it on the file system.
      */
-    public init(path: String, platform: Platform = .iOS, code: String? = nil) {
+    public init(path: String, platform: Platform = .iOS, autoRun: Bool = true, code: String? = nil) {
         self.path = path.removingSuffixIfNeeded("/")
                         .addingSuffixIfNeeded(".playground")
                         .appending("/")
 
         self.platform = platform
+        self.autoRun = autoRun
         self.code = code
     }
 
@@ -69,7 +73,7 @@ public class Playground: Generatable {
 
     private func generateXML() -> String {
         var xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
-        xml.append("<playground version=\"5.0\" target-platform=\"\(platform.rawValue)\">")
+        xml.append("<playground version=\"5.0\" target-platform=\"\(platform.rawValue)\" executeOnSourceChanges=\"\(autoRun)\">")
         xml.append("    <timeline fileName=\"timeline.xctimeline\"/>")
         xml.append("</playground>")
         return xml
