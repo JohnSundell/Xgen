@@ -98,6 +98,24 @@ class XgenTests: XCTestCase {
         let contentsFile = try workspaceFolder.file(named: "Contents.xcworkspacedata")
         XCTAssertTrue(try contentsFile.readAsString().contains(playgroundFolder.path))
     }
+
+    func testPlaygroundAutoRunsByDefault() {
+        let playground = Playground(path: folder.path)
+        XCTAssertTrue(playground.autoRun)
+    }
+
+    func testGeneratingPlaygroundWithoutAutoRun() throws {
+        let playground = Playground(path: folder.path + "Playground", autoRun: false)
+        XCTAssertFalse(playground.autoRun)
+
+        try playground.generate()
+
+        let playgroundFolder = try folder.subfolder(named: "Playground.playground")
+        let contentsFile = try playgroundFolder.file(named: "contents.xcplayground")
+        let xml = try XMLDocument(data: contentsFile.read(), options: [])
+        let autoRunAttribute = xml.rootElement()?.attribute(forName: "executeOnSourceChanges")
+        XCTAssertEqual(autoRunAttribute?.stringValue, "false")
+    }
 }
 
 // MARK: - Extensions
