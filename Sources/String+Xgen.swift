@@ -7,10 +7,6 @@
 import Foundation
 
 internal extension String {
-    var length: IndexDistance {
-        return distance(from: startIndex, to: endIndex)
-    }
-
     func addingSuffixIfNeeded(_ suffix: String) -> String {
         guard hasSuffix(suffix) else {
             return self + suffix
@@ -24,7 +20,7 @@ internal extension String {
             return self
         }
 
-        let substringEndIndex = index(endIndex, offsetBy: -suffix.length)
+        let substringEndIndex = index(endIndex, offsetBy: -suffix.count)
         return String(self[..<substringEndIndex])
     }
 }
