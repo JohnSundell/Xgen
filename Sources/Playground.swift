@@ -24,6 +24,8 @@ public class Playground: Generatable {
     public var autoRun: Bool
     /// The code that the playground should contain (if nil, a default will be used)
     public var code: String?
+    /// The auxiliary source files that the playground should include
+    public var auxiliarySourceFiles = [File]()
 
     // MARK: - Initializer
 
@@ -61,6 +63,8 @@ public class Playground: Generatable {
             let xmlFile = try folder.createFile(named: "contents.xcplayground")
             try xmlFile.write(string: generateXML())
 
+            try copyAuxiliarySourceFiles(into: folder)
+
             let workspace = Workspace(path: path + "playground.xcworkspace")
             workspace.addReference(to: "self:")
             try workspace.generate()
@@ -77,6 +81,18 @@ public class Playground: Generatable {
         xml.append("    <timeline fileName=\"timeline.xctimeline\"/>")
         xml.append("</playground>")
         return xml
+    }
+
+    private func copyAuxiliarySourceFiles(into folder: Folder) throws {
+        guard !auxiliarySourceFiles.isEmpty else {
+            return
+        }
+
+        let sourcesFolder = try folder.createSubfolder(named: "Sources")
+
+        for file in auxiliarySourceFiles {
+            try file.copy(to: sourcesFolder)
+        }
     }
 }
 
