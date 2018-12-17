@@ -116,6 +116,33 @@ class XgenTests: XCTestCase {
         let autoRunAttribute = xml.rootElement()?.attribute(forName: "executeOnSourceChanges")
         XCTAssertEqual(autoRunAttribute?.stringValue, "false")
     }
+
+    func testPlaygroundWithoutAuxiliarySourceFilesDoesNotHaveSourcesFolder() throws {
+        let playground = Playground(path: folder.path + "Playground")
+        try playground.generate()
+
+        let playgroundFolder = try folder.subfolder(named: "Playground.playground")
+        XCTAssertFalse(playgroundFolder.containsSubfolder(named: "Sources"))
+    }
+
+    func testGeneratingPlaygroundWithAuxiliarySourceFiles() throws {
+        let playground = Playground(path: folder.path + "Playground")
+        try playground.auxiliarySourceFiles = [
+            folder.createFile(named: "A.swift", contents: "//A"),
+            folder.createFile(named: "B.swift", contents: "//B")
+        ]
+
+        try playground.generate()
+
+        let playgroundFolder = try folder.subfolder(named: "Playground.playground")
+        let sourcesFolder = try playgroundFolder.subfolder(named: "Sources")
+
+        let sourceFileNames = sourcesFolder.files.map { $0.nameExcludingExtension }
+        XCTAssertEqual(sourceFileNames, ["A", "B"])
+
+        let sources = try sourcesFolder.files.map { try $0.readAsString() }
+        XCTAssertEqual(sources, ["//A", "//B"])
+    }
 }
 
 // MARK: - Extensions
