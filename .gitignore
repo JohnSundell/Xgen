@@ -4,3 +4,4 @@
 Package.pins
 Package.resolved
 /*.xcodeproj
+/.swiftpm
