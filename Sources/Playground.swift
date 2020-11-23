@@ -22,6 +22,8 @@ public class Playground: Generatable {
     public var platform: Platform
     /// Whether the playground should be automatically run on each code change
     public var autoRun: Bool
+    /// Whether the playground should build the packages or frameworks for import into the playground
+    public var buildActiveScheme: Bool
     /// The code that the playground should contain (if nil, a default will be used)
     public var code: String?
     /// The auxiliary source files that the playground should include
@@ -41,13 +43,14 @@ public class Playground: Generatable {
      *  Note that you have to call `generate()` on the playground to actually
      *  generate it on the file system.
      */
-    public init(path: String, platform: Platform = .iOS, autoRun: Bool = true, code: String? = nil) {
+    public init(path: String, platform: Platform = .iOS, autoRun: Bool = true, buildActiveScheme: Bool = true, code: String? = nil) {
         self.path = path.removingSuffixIfNeeded("/")
                         .addingSuffixIfNeeded(".playground")
                         .appending("/")
 
         self.platform = platform
         self.autoRun = autoRun
+        self.buildActiveScheme = buildActiveScheme
         self.code = code
     }
 
@@ -77,7 +80,7 @@ public class Playground: Generatable {
 
     private func generateXML() -> String {
         var xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
-        xml.append("<playground version=\"5.0\" target-platform=\"\(platform.rawValue)\" executeOnSourceChanges=\"\(autoRun)\">")
+        xml.append("<playground version=\"5.0\" target-platform=\"\(platform.rawValue)\" executeOnSourceChanges=\"\(autoRun)\" buildActiveScheme='\(buildActiveScheme)'>")
         xml.append("    <timeline fileName=\"timeline.xctimeline\"/>")
         xml.append("</playground>")
         return xml
