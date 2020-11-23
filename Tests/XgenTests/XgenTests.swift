@@ -103,6 +103,11 @@ class XgenTests: XCTestCase {
         let playground = Playground(path: folder.path)
         XCTAssertTrue(playground.autoRun)
     }
+    
+    func testPlaygroundBuildsActiveSchemeByDefault() {
+        let playground = Playground(path: folder.path)
+        XCTAssertTrue(playground.buildActiveScheme)
+    }
 
     func testGeneratingPlaygroundWithoutAutoRun() throws {
         let playground = Playground(path: folder.path + "Playground", autoRun: false)
@@ -115,6 +120,19 @@ class XgenTests: XCTestCase {
         let xml = try XMLDocument(data: contentsFile.read(), options: [])
         let autoRunAttribute = xml.rootElement()?.attribute(forName: "executeOnSourceChanges")
         XCTAssertEqual(autoRunAttribute?.stringValue, "false")
+    }
+    
+    func testGeneratingPlaygroundWithoutBuildActiveScheme() throws {
+        let playground = Playground(path: folder.path + "Playground", buildActiveScheme: false)
+        XCTAssertFalse(playground.buildActiveScheme)
+
+        try playground.generate()
+
+        let playgroundFolder = try folder.subfolder(named: "Playground.playground")
+        let contentsFile = try playgroundFolder.file(named: "contents.xcplayground")
+        let xml = try XMLDocument(data: contentsFile.read(), options: [])
+        let buildActiveSchemeAttribute = xml.rootElement()?.attribute(forName: "buildActiveScheme")
+        XCTAssertEqual(buildActiveSchemeAttribute?.stringValue, "false")
     }
 
     func testPlaygroundWithoutAuxiliarySourceFilesDoesNotHaveSourcesFolder() throws {
